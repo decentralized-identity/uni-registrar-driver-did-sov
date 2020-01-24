@@ -265,7 +265,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		byte[] privateKeyBytesBuffer = new byte[Sodium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES];
 		NaCl.sodium().crypto_sign_ed25519_seed_keypair(publicKeyBytesBuffer, privateKeyBytesBuffer, newSeed.getBytes());
 		byte[] publicKeyBytes = publicKeyBytesBuffer;
-		byte[] privateKeyBytes = Arrays.copyOf(privateKeyBytesBuffer, 32);
+		byte[] privateKeyBytes = privateKeyBytesBuffer;
 		byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
 		String publicKeyBase58 = Base58.encode(publicKeyBytes);
 		String privateKeyBase58 = Base58.encode(privateKeyBytes);
@@ -511,7 +511,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 	private static String identifierToPublicKeyDIDURL(String identifier) {
 
-		return identifier + "#keys-1";
+		return identifier + "#key-1";
 	}
 
 	/*
