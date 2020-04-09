@@ -29,7 +29,7 @@ import org.hyperledger.indy.sdk.wallet.WalletExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.danubetech.keyformats.PrivateKeyToJWK;
+import com.danubetech.keyformats.PrivateKey_to_JWK;
 import com.github.jsonldjava.utils.JsonUtils;
 import com.nimbusds.jose.jwk.JWK;
 
@@ -506,7 +506,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		String kid = null;
 		String use = null;
 
-		return PrivateKeyToJWK.Ed25519PrivateKeyBytesToJWK(privateKeyBytes, publicKeyBytes, kid, use);
+		return PrivateKey_to_JWK.Ed25519PrivateKeyBytes_to_JWK(privateKeyBytes, publicKeyBytes, kid, use);
 	}
 
 	private static String identifierToPublicKeyDIDURL(String identifier) {
