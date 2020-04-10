@@ -3,14 +3,18 @@
 FROM universalregistrar/base-ubuntu
 MAINTAINER Markus Sabadello <markus@danubetech.com>
 
-# build dependencies
+# install dependencies
 
 RUN apt-get -y update && \
     apt-get install -y --no-install-recommends software-properties-common gnupg libsodium23 && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && \
     add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial stable" && \
-    apt-get install -y libindy=1.12.0 && \
+    apt-get install -y libindy=1.14.0 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ARG GITHUB_READ_PACKAGES_OWNER
+ARG GITHUB_READ_PACKAGES_TOKEN
+ADD ./settings.xml /root/.m2/
 
 # build driver-did-sov
 
