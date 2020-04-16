@@ -144,6 +144,10 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		String network = registerRequest.getOptions() == null ? null : (String) registerRequest.getOptions().get("network");
 		if (network == null || network.trim().isEmpty()) network = "_";
 
+		// read secret
+
+		String seed = registerRequest.getSecret() == null ? null : (String) registerRequest.getSecret().get("seed");
+
 		// find pool and version and taa
 
 		Pool pool = this.getPoolMap().get(network);
@@ -155,7 +159,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		// create USER SEED
 
-		String newSeed = RandomStringUtils.randomAlphanumeric(32);
+		String newSeed = seed != null ? seed : RandomStringUtils.randomAlphanumeric(32);
 
 		// register
 
