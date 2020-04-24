@@ -33,6 +33,7 @@ import com.danubetech.keyformats.PrivateKey_to_JWK;
 import com.github.jsonldjava.utils.JsonUtils;
 import com.nimbusds.jose.jwk.JWK;
 
+import did.DIDDocument;
 import did.Service;
 import io.leonard.Base58;
 import uniregistrar.RegistrationException;
@@ -207,49 +208,54 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 				// service endpoints
 
-				if (registerRequest.getAddServices() != null) {
+				if (registerRequest.getDidDocument() != null) {
 
-					Map<String, Object> jsonObject = new HashMap<String, Object> ();
-					Map<String, Object> endpointJsonObject = new HashMap<String, Object> ();
+					DIDDocument didDocument = registerRequest.getDidDocument();
 
-					for (Service service : registerRequest.getAddServices()) {
+					if (didDocument.getServices() != null) {
 
-						endpointJsonObject.put(service.getType(), service.getServiceEndpoint());
+						Map<String, Object> jsonObject = new HashMap<String, Object> ();
+						Map<String, Object> endpointJsonObject = new HashMap<String, Object> ();
+
+						for (Service service : didDocument.getServices()) {
+
+							endpointJsonObject.put(service.getType(), service.getServiceEndpoint());
+						}
+
+						jsonObject.put("endpoint", endpointJsonObject);
+
+						String jsonObjectString;
+
+						try {
+
+							jsonObjectString = JsonUtils.toString(jsonObject);
+						} catch (IOException ex) {
+
+							throw new RegistrationException("Invalid endpoints: " + endpointJsonObject);
+						}
+
+						if (log.isDebugEnabled()) log.debug("Raw: " + jsonObjectString);
+
+						// create ATTRIB request
+
+						if (log.isDebugEnabled()) log.debug("=== CREATE ATTRIB REQUEST ===");
+						String attribRequest = Ledger.buildAttribRequest(newDid, newDid, null, jsonObjectString, null).get();
+						if (log.isDebugEnabled()) log.debug("attribRequest: " + attribRequest);
+
+						// agree
+
+						if (taa != null) {
+
+							attribRequest = Taa.agree(attribRequest, taa);
+							if (log.isDebugEnabled()) log.debug("agreed attribRequest: " + attribRequest);
+						}
+
+						// sign and submit request to ledger
+
+						if (log.isDebugEnabled()) log.debug("=== SUBMIT 2 ===");
+						String submitRequestResult2 = Ledger.signAndSubmitRequest(pool, walletUser, newDid, attribRequest).get();
+						if (log.isDebugEnabled()) log.debug("SubmitRequestResult2: " + submitRequestResult2);
 					}
-
-					jsonObject.put("endpoint", endpointJsonObject);
-
-					String jsonObjectString;
-
-					try {
-
-						jsonObjectString = JsonUtils.toString(jsonObject);
-					} catch (IOException ex) {
-
-						throw new RegistrationException("Invalid endpoints: " + endpointJsonObject);
-					}
-
-					if (log.isDebugEnabled()) log.debug("Raw: " + jsonObjectString);
-
-					// create ATTRIB request
-
-					if (log.isDebugEnabled()) log.debug("=== CREATE ATTRIB REQUEST ===");
-					String attribRequest = Ledger.buildAttribRequest(newDid, newDid, null, jsonObjectString, null).get();
-					if (log.isDebugEnabled()) log.debug("attribRequest: " + attribRequest);
-
-					// agree
-
-					if (taa != null) {
-
-						attribRequest = Taa.agree(attribRequest, taa);
-						if (log.isDebugEnabled()) log.debug("agreed attribRequest: " + attribRequest);
-					}
-
-					// sign and submit request to ledger
-
-					if (log.isDebugEnabled()) log.debug("=== SUBMIT 2 ===");
-					String submitRequestResult2 = Ledger.signAndSubmitRequest(pool, walletUser, newDid, attribRequest).get();
-					if (log.isDebugEnabled()) log.debug("SubmitRequestResult2: " + submitRequestResult2);
 				}
 			}
 		} catch (InterruptedException | ExecutionException | IndyException ex) {
@@ -271,20 +277,20 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		byte[] publicKeyBytes = publicKeyBytesBuffer;
 		byte[] privateKeyBytes = privateKeyBytesBuffer;
 		byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
+		String did = Base58.encode(didBytes);
+		String keyUrl = identifierToKeyUrl(identifier);
+		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes);
 		String publicKeyBase58 = Base58.encode(publicKeyBytes);
 		String privateKeyBase58 = Base58.encode(privateKeyBytes);
-		String did = Base58.encode(didBytes);
-		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes);
-		String publicKeyDIDURL = identifierToPublicKeyDIDURL(identifier);
 
 		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match registered DID: " + did + " != " + newDid);
 
 		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
 		Map<String, Object> jsonKey = new HashMap<String, Object> ();
+		jsonKey.put("id", keyUrl);
+		jsonKey.put("privateKeyJwk", jsonWebKey.toJSONObject());
 		jsonKey.put("publicKeyBase58", publicKeyBase58);
 		jsonKey.put("privateKeyBase58", privateKeyBase58);
-		jsonKey.put("privateKeyJwk", jsonWebKey.toJSONObject());
-		jsonKey.put("publicKeyDIDURL", publicKeyDIDURL);
 		jsonKeys.add(jsonKey);
 
 		Map<String, Object> secret = new LinkedHashMap<String, Object> ();
@@ -513,7 +519,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		return PrivateKey_to_JWK.Ed25519PrivateKeyBytes_to_JWK(privateKeyBytes, publicKeyBytes, kid, use);
 	}
 
-	private static String identifierToPublicKeyDIDURL(String identifier) {
+	private static String identifierToKeyUrl(String identifier) {
 
 		return identifier + "#key-1";
 	}
