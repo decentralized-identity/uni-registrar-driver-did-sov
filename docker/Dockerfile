@@ -16,10 +16,6 @@ RUN cd /opt/ && wget https://repo.sovrin.org/repository/maven-public/org/hyperle
     wget https://repo.sovrin.org/repository/maven-public/org/hyperledger/indy/1.14.0/indy-1.14.0.pom && \
     mvn install:install-file -Dfile=indy-1.14.0.jar -DpomFile=indy-1.14.0.pom
 
-ARG GITHUB_READ_PACKAGES_OWNER
-ARG GITHUB_READ_PACKAGES_TOKEN
-ADD ./settings.xml /root/.m2/
-
 # build driver-did-sov
 
 ADD . /opt/driver-did-sov
