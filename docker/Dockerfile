@@ -1,7 +1,16 @@
 # Dockerfile for universalregistrar/driver-did-sov
 
-FROM universalregistrar/base-ubuntu
+FROM ubuntu:18.04
 MAINTAINER Markus Sabadello <markus@danubetech.com>
+
+USER root
+
+RUN apt-get -y update && \
+    apt-get install -y --no-install-recommends openjdk-11-jdk-headless maven git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
+ENV PATH $JAVA_HOME/bin:$PATH
 
 # install dependencies
 
@@ -12,14 +21,9 @@ RUN apt-get -y update && \
     apt-get install -y libindy=1.14.0 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN cd /opt/ && wget https://repo.sovrin.org/repository/maven-public/org/hyperledger/indy/1.14.0/indy-1.14.0.jar && \
-    wget https://repo.sovrin.org/repository/maven-public/org/hyperledger/indy/1.14.0/indy-1.14.0.pom && \
-    mvn install:install-file -Dfile=indy-1.14.0.jar -DpomFile=indy-1.14.0.pom
-
 # build driver-did-sov
 
 ADD . /opt/driver-did-sov
-
 RUN cd /opt/driver-did-sov && mvn clean install package -N -DskipTests
 
 # variables

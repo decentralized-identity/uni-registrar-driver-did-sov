@@ -15,15 +15,21 @@
 
 	<repositories>
 		<repository>
+			<id>danubetech-maven-snapshots</id>
+			<url>https://repo.danubetech.com/repository/maven-snapshots/</url>
+		</repository>
+		<repository>
+			<id>danubetech-maven-releases</id>
+			<url>https://repo.danubetech.com/repository/maven-releases/</url>
+		</repository>
+		<repository>
 			<id>sovrin</id>
 			<url>https://repo.sovrin.org/repository/maven-public</url>
 		</repository>
 	</repositories>
 
 	<profiles>
-
 		<profile>
-
 			<id>default</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
@@ -31,11 +37,8 @@
 			<properties>
 				<packaging.type>jar</packaging.type>
 			</properties>
-
 		</profile>
-
 		<profile>
-
 			<id>war</id>
 			<properties>
 				<packaging.type>war</packaging.type>
@@ -102,9 +105,7 @@
 					</plugin>
 				</plugins>
 			</build>
-
 		</profile>
-
 	</profiles>
 
 	<dependencies>
