@@ -2,6 +2,7 @@ package uniregistrar.driver.did.sov;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import foundation.identity.did.DIDDocument;
+import foundation.identity.did.Service;
 import org.abstractj.kalium.NaCl;
 import org.abstractj.kalium.NaCl.Sodium;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -30,11 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.danubetech.keyformats.PrivateKey_to_JWK;
-import com.github.jsonldjava.utils.JsonUtils;
 import com.nimbusds.jose.jwk.JWK;
 
-import did.DIDDocument;
-import did.Service;
 import io.leonard.Base58;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.AbstractDriver;
@@ -228,7 +229,9 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 						try {
 
-							jsonObjectString = JsonUtils.toString(jsonObject);
+							StringWriter stringWriter = new StringWriter();
+							new ObjectMapper().writeValue(stringWriter, jsonObject);
+							jsonObjectString = stringWriter.toString();
 						} catch (IOException ex) {
 
 							throw new RegistrationException("Invalid endpoints: " + endpointJsonObject);
