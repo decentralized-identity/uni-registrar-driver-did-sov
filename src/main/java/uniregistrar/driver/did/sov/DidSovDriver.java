@@ -41,11 +41,11 @@ import uniregistrar.RegistrationException;
 import uniregistrar.driver.AbstractDriver;
 import uniregistrar.driver.Driver;
 import uniregistrar.request.DeactivateRequest;
-import uniregistrar.request.RegisterRequest;
+import uniregistrar.request.CreateRequest;
 import uniregistrar.request.UpdateRequest;
 import uniregistrar.state.DeactivateState;
-import uniregistrar.state.RegisterState;
-import uniregistrar.state.SetRegisterStateFinished;
+import uniregistrar.state.CreateState;
+import uniregistrar.state.SetCreateStateFinished;
 import uniregistrar.state.UpdateState;
 
 public class DidSovDriver extends AbstractDriver implements Driver {
@@ -132,7 +132,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 	}
 
 	@Override
-	public RegisterState register(RegisterRequest registerRequest) throws RegistrationException {
+	public CreateState register(CreateRequest createRequest) throws RegistrationException {
 
 		// open pool and wallet
 
@@ -143,12 +143,12 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		// read options
 
-		String network = registerRequest.getOptions() == null ? null : (String) registerRequest.getOptions().get("network");
+		String network = createRequest.getOptions() == null ? null : (String) createRequest.getOptions().get("network");
 		if (network == null || network.trim().isEmpty()) network = "_";
 
 		// read secret
 
-		String seed = registerRequest.getSecret() == null ? null : (String) registerRequest.getSecret().get("seed");
+		String seed = createRequest.getSecret() == null ? null : (String) createRequest.getSecret().get("seed");
 
 		// find pool and version and taa
 
@@ -209,9 +209,9 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 				// service endpoints
 
-				if (registerRequest.getDidDocument() != null) {
+				if (createRequest.getDidDocument() != null) {
 
-					DIDDocument didDocument = registerRequest.getDidDocument();
+					DIDDocument didDocument = createRequest.getDidDocument();
 
 					if (didDocument.getServices() != null) {
 
@@ -309,11 +309,11 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		// done
 
-		RegisterState registerState = RegisterState.build();
-		SetRegisterStateFinished.setStateFinished(registerState, identifier, secret);
-		registerState.setMethodMetadata(methodMetadata);
+		CreateState createState = CreateState.build();
+		SetCreateStateFinished.setStateFinished(createState, identifier, secret);
+		createState.setMethodMetadata(methodMetadata);
 
-		return registerState;
+		return createState;
 	}
 
 	@Override
