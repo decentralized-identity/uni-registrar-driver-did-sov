@@ -132,7 +132,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 	}
 
 	@Override
-	public CreateState register(CreateRequest createRequest) throws RegistrationException {
+	public CreateState create(CreateRequest createRequest) throws RegistrationException {
 
 		// open pool and wallet
 
@@ -163,7 +163,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		String newSeed = seed != null ? seed : RandomStringUtils.randomAlphanumeric(32);
 
-		// register
+		// create
 
 		String newDid;
 		String newVerkey;
@@ -286,7 +286,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		String publicKeyBase58 = Base58.encode(publicKeyBytes);
 		String privateKeyBase58 = Base58.encode(privateKeyBytes);
 
-		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match registered DID: " + did + " != " + newDid);
+		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
 
 		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
 		Map<String, Object> jsonKey = new HashMap<String, Object> ();
