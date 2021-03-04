@@ -288,12 +288,17 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
 
+		List<String> purposes = new ArrayList<String> ();
+		purposes.add("authentication");
+		purposes.add("assertionMethod");
+
 		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
 		Map<String, Object> jsonKey = new HashMap<String, Object> ();
 		jsonKey.put("id", keyUrl);
 		jsonKey.put("privateKeyJwk", jsonWebKey.toJSONObject());
 		jsonKey.put("publicKeyBase58", publicKeyBase58);
 		jsonKey.put("privateKeyBase58", privateKeyBase58);
+		jsonKey.put("purpose", purposes);
 		jsonKeys.add(jsonKey);
 
 		Map<String, Object> secret = new LinkedHashMap<String, Object> ();
