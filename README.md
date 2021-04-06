@@ -18,8 +18,34 @@ docker run -p 9080:9080 universalregistrar/driver-did-sov
 
 ## Driver Environment Variables
 
-... TODO ...
+The driver recognizes the following environment variables:
 
-## Driver Metadata
+* `uniregistrar_driver_did_sov_libIndyPath`: The path to the Indy SDK library.
+* `uniregistrar_driver_did_sov_poolConfigs`: A semi-colon-separated list of Indy network names and pool configuration files. The default network is `_`.
+* `uniregistrar_driver_did_sov_poolVersions`: A semi-colon-separated list of Indy network names and pool protocol versions. The default network is `_`.
+* `uniregistrar_driver_did_sov_walletName`: The name of the Indy wallet.
+* `uniregistrar_driver_did_sov_trustAnchorSeed`: The seed of the trust anchor which will submit the DID registration transactions.
 
-... TODO ...
+## Driver Input Options
+
+```
+{
+    "network": "builder"
+}
+```
+
+* `network`: The name of the network where a DID should be registered. Values depend on `poolConfigs` environment variable, but are typically: `_` (mainnet), `staging`, `builder`, `danube`
+
+## Driver Output Metadata
+
+```
+{
+    "network": "danube",
+    "poolVersion": 2,
+    "submitterDid": "V4SGRU86Z58d6TV7PBUe6f"
+}
+```
+
+* `network`: The name of the network where the DID was registered. Values depend on `poolConfigs` environment variable, but are typically: `_` (mainnet), `staging`, `builder`, `danube`
+* `poolVersion`: The version of the network where the DID was registered.
+* `submitterDid`: The DID of the transaction author which submitted the DID registration.
