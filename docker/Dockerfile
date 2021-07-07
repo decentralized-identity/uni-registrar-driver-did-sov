@@ -12,11 +12,12 @@ ENV PATH $JAVA_HOME/bin:$PATH
 
 # install dependencies
 
-RUN apt-get -y update && \
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -y update && \
     apt-get install -y --no-install-recommends software-properties-common gnupg libsodium23 wget && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && \
-    add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial stable" && \
-    apt-get install -y libindy=1.14.0 && \
+    add-apt-repository "deb https://repo.sovrin.org/sdk/deb bionic stable" && \
+    apt-get install -y libindy=1.16.0-bionic && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # build driver-did-sov
