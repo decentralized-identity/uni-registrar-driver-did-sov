@@ -282,9 +282,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
 		String did = Base58.encode(didBytes);
 		String keyUrl = identifierToKeyUrl(identifier);
-		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes);
-		String publicKeyBase58 = Base58.encode(publicKeyBytes);
-		String privateKeyBase58 = Base58.encode(privateKeyBytes);
+		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes, keyUrl);
 
 		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
 
@@ -294,12 +292,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
 		Map<String, Object> jsonKey = new HashMap<String, Object> ();
-		jsonKey.put("id", keyUrl);
-		jsonKey.put("privateKeyJwk", jsonWebKey.toJSONObject());
-		jsonKey.put("publicKeyBase58", publicKeyBase58);
-		jsonKey.put("privateKeyBase58", privateKeyBase58);
-		jsonKey.put("purpose", purposes);
-		jsonKeys.add(jsonKey);
+		jsonKeys.add(jsonWebKey.toJSONObject());
 
 		Map<String, Object> secret = new LinkedHashMap<String, Object> ();
 		secret.put("seed", newSeed);
@@ -519,9 +512,9 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 	 * Helper methods
 	 */
 
-	private static JWK privateKeyToJWK(byte[] privateKeyBytes, byte[] publicKeyBytes) {
+	private static JWK privateKeyToJWK(byte[] privateKeyBytes, byte[] publicKeyBytes, String keyUrl) {
 
-		String kid = null;
+		String kid = keyUrl;
 		String use = null;
 
 		return PrivateKey_to_JWK.Ed25519PrivateKeyBytes_to_JWK(privateKeyBytes, publicKeyBytes, kid, use);
