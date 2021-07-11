@@ -56,10 +56,10 @@ public class Taa {
 		String taaDigest = taaDigest(taaVersion + taa);
 		String taaMechanism = taaMechanism();
 
-		log.info("taa: " + taa);
-		log.info("taaVersion: " + taaVersion);
-		log.info("taaDigest: " + taaDigest);
-		log.info("taaMechanism: " + taaMechanism);
+		if (log.isDebugEnabled()) log.debug("taa: " + taa);
+		if (log.isDebugEnabled()) log.debug("taaVersion: " + taaVersion);
+		if (log.isDebugEnabled()) log.debug("taaDigest: " + taaDigest);
+		if (log.isDebugEnabled()) log.debug("taaMechanism: " + taaMechanism);
 
 		String appendTxnAuthorAgreementAcceptanceToNymRequest = Ledger.appendTxnAuthorAgreementAcceptanceToRequest(request, Taa.taa, taaVersion, taaDigest, taaMechanism, System.currentTimeMillis()/1000).get();
 
