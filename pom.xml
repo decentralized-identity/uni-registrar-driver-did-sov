@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>uni-registrar-driver-did-sov</artifactId>
-	<packaging>${packaging.type}</packaging>
+	<packaging>war</packaging>
 	<name>uni-registrar-driver-did-sov</name>
 
 	<parent>
@@ -35,15 +35,6 @@
 	</properties>
 
 	<profiles>
-		<profile>
-			<id>default</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<properties>
-				<packaging.type>jar</packaging.type>
-			</properties>
-		</profile>
 		<profile>
 			<id>war</id>
 			<properties>
