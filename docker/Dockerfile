@@ -11,9 +11,9 @@ RUN cd /opt/driver-did-sov && mvn clean install package -P war -N -DskipTests
 FROM jetty:9.4-jre11
 MAINTAINER Markus Sabadello <markus@danubetech.com>
 
-USER root
-
 # install dependencies
+
+USER root
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
@@ -23,6 +23,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
     apt-get install -y libindy=1.16.0-bionic && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+USER jetty
 
 # variables
 
@@ -34,8 +36,8 @@ ENV uniregistrar_driver_did_sov_trustAnchorSeed=
 
 # copy from build stage
 
-COPY --from=build /opt/driver-did-sov/target/*.war /var/lib/jetty/webapps/ROOT.war
-COPY --from=build /opt/driver-did-sov/sovrin/ /var/lib/jetty/sovrin/
+COPY --from=build --chown=jetty /opt/driver-did-sov/target/*.war /var/lib/jetty/webapps/ROOT.war
+COPY --from=build --chown=jetty /opt/driver-did-sov/sovrin/ /var/lib/jetty/sovrin/
 
 # done
 
