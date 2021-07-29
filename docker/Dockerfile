@@ -1,29 +1,29 @@
 # Dockerfile for universalregistrar/driver-did-sov
 
 FROM maven:3-jdk-11 AS build
+MAINTAINER Markus Sabadello <markus@danubetech.com>
 
 # build driver-did-sov
 
 ADD . /opt/driver-did-sov
-RUN cd /opt/driver-did-sov && mvn clean install package -N -DskipTests
-
+RUN cd /opt/driver-did-sov && mvn clean install package -P war -N -DskipTests
 
 FROM jetty:9.4-jre11
 MAINTAINER Markus Sabadello <markus@danubetech.com>
 
-# install dependencies
 USER root
+
+# install dependencies
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y update && \
-    apt-get install -y --no-install-recommends software-properties-common gnupg libsodium23 wget && \
+    apt-get install -y --no-install-recommends software-properties-common gnupg && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && \
     add-apt-repository "deb https://repo.sovrin.org/sdk/deb bionic stable" && \
     apt-get -y update && \
     apt-get install -y libindy=1.16.0-bionic && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-USER 1001
 # variables
 
 ENV uniregistrar_driver_did_sov_libIndyPath=
@@ -35,6 +35,7 @@ ENV uniregistrar_driver_did_sov_trustAnchorSeed=
 # copy from build stage
 
 COPY --from=build /opt/driver-did-sov/target/*.war /var/lib/jetty/webapps/ROOT.war
+COPY --from=build /opt/driver-did-sov/sovrin/ /var/lib/jetty/sovrin/
 
 # done
 

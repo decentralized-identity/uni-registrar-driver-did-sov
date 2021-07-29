@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>uni-registrar-driver-did-sov</artifactId>
-	<packaging>war</packaging>
+	<packaging>${packaging.type}</packaging>
 	<name>uni-registrar-driver-did-sov</name>
 
 	<parent>
@@ -35,6 +35,15 @@
 	</properties>
 
 	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<packaging.type>jar</packaging.type>
+			</properties>
+		</profile>
 		<profile>
 			<id>war</id>
 			<properties>
@@ -83,12 +92,10 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>decentralized-identity</groupId>
