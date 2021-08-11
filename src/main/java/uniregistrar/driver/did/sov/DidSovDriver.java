@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.danubetech.keyformats.jose.JWK;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
@@ -34,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.danubetech.keyformats.PrivateKey_to_JWK;
-import com.nimbusds.jose.jwk.JWK;
 
 import io.leonard.Base58;
 import uniregistrar.RegistrationException;
@@ -287,7 +287,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
 
 		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
-		jsonKeys.add(jsonWebKey.toJSONObject());
+		jsonKeys.add(jsonWebKey.toMap());
 
 		Map<String, Object> secret = new LinkedHashMap<String, Object> ();
 		secret.put("seed", newSeed);
