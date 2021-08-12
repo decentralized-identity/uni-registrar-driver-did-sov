@@ -28,6 +28,12 @@
 		</repository>
 	</repositories>
 
+	<properties>
+		<org.hyperledger.indy.version>1.16.0</org.hyperledger.indy.version>
+		<org.abstractj.kalium.kalium.version>0.8.0</org.abstractj.kalium.kalium.version>
+		<io.leonard.base58.version>0.0.2</io.leonard.base58.version>
+	</properties>
+
 	<profiles>
 		<profile>
 			<id>default</id>
@@ -86,12 +92,10 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>decentralized-identity</groupId>
@@ -104,19 +108,19 @@
 		<dependency>
 			<groupId>org.hyperledger</groupId>
 			<artifactId>indy</artifactId>
-			<version>1.16.0</version>
+			<version>${org.hyperledger.indy.version}</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.abstractj.kalium</groupId>
 			<artifactId>kalium</artifactId>
-			<version>0.8.0</version>
+			<version>${org.abstractj.kalium.kalium.version}</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.leonard</groupId>
 			<artifactId>base58</artifactId>
-			<version>0.0.2</version>
+			<version>${io.leonard.base58.version}</version>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
