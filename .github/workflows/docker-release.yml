@@ -6,7 +6,7 @@ on:
 env:
   IMAGE_NAME: universalregistrar/driver-did-sov
   IMAGE_TAG: 0.1.0
-  REPO_NAME: repo.danubetech.com:5000
+  REPO_NAME: docker.io
   PATH_TO_DOCKERFILE: $GITHUB_WORKSPACE/uni-registrar-web/docker/Dockerfile
   BUILD_CONTEXT: $GITHUB_WORKSPACE
 
@@ -25,8 +25,8 @@ jobs:
           token: ${{ secrets.CI_SECRET_READER_PERIODIC_TOKEN }}
           caCertificate: ${{ secrets.VAULTCA }}
           secrets: |
-            ci/data/gh-workflows/docker-danubetech-nexus username | DOCKER_USERNAME ;
-            ci/data/gh-workflows/docker-danubetech-nexus password | DOCKER_PASSWORD ;
+            ci/data/gh-workflows/dockerhub username | DOCKER_USERNAME ;
+            ci/data/gh-workflows/dockerhub password | DOCKER_PASSWORD ;
             ci/data/gh-workflows/maven-danubetech-nexus username | MAVEN_USERNAME ;
             ci/data/gh-workflows/maven-danubetech-nexus password | MAVEN_PASSWORD ;
             ci/data/gh-workflows/deployment-status slack-webhook-url | SLACK_WEBHOOK_URL
