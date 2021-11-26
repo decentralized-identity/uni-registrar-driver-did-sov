@@ -286,38 +286,36 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
 
-		List<Map<String, Object>> jsonKeys = new ArrayList<Map<String, Object>> ();
+		List<Map<String, Object>> jsonKeys = new ArrayList<>();
 		jsonKeys.add(jsonWebKey.toMap());
 
-		Map<String, Object> secret = new LinkedHashMap<String, Object> ();
+		Map<String, Object> secret = new LinkedHashMap<>();
 		secret.put("seed", newSeed);
 		secret.put("keys", jsonKeys);
 
-		// REGISTRATION STATE FINISHED: METHOD METADATA
+		// REGISTRATION STATE FINISHED: DID DOCUMENT METADATA
 
-		Map<String, Object> methodMetadata = new LinkedHashMap<String, Object> ();
-		methodMetadata.put("network", network);
-		methodMetadata.put("poolVersion", poolVersion);
-		methodMetadata.put("submitterDid", this.getTrustAnchorDid());
+		Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
+		didDocumentMetadata.put("network", network);
+		didDocumentMetadata.put("poolVersion", poolVersion);
+		didDocumentMetadata.put("submitterDid", this.getTrustAnchorDid());
 
 		// done
 
 		CreateState createState = CreateState.build();
 		SetCreateStateFinished.setStateFinished(createState, identifier, secret);
-		createState.setMethodMetadata(methodMetadata);
+		createState.setDidDocumentMetadata(didDocumentMetadata);
 
 		return createState;
 	}
 
 	@Override
 	public UpdateState update(UpdateRequest updateRequest) throws RegistrationException {
-
 		throw new RuntimeException("Not implemented.");
 	}
 
 	@Override
 	public DeactivateState deactivate(DeactivateRequest deactivateRequest) throws RegistrationException {
-
 		throw new RuntimeException("Not implemented.");
 	}
 
