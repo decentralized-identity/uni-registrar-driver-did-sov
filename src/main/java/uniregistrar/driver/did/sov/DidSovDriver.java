@@ -165,8 +165,8 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		// create
 
-		String newDid;
-		String newVerkey;
+		String indyDid;
+		String indyVerkey;
 
 		try {
 
@@ -184,13 +184,13 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 				CreateAndStoreMyDidResult createAndStoreMyDidResult = Did.createAndStoreMyDid(walletUser, createAndStoreMyDidJSONParameter.toJson()).get();
 				if (log.isDebugEnabled()) log.debug("CreateAndStoreMyDidResult: " + createAndStoreMyDidResult);
 
-				newDid = createAndStoreMyDidResult.getDid();
-				newVerkey = createAndStoreMyDidResult.getVerkey();
+				indyDid = createAndStoreMyDidResult.getDid();
+				indyVerkey = createAndStoreMyDidResult.getVerkey();
 
 				// create NYM request
 
 				if (log.isDebugEnabled()) log.debug("=== CREATE NYM REQUEST ===");
-				String nymRequest = Ledger.buildNymRequest(this.getTrustAnchorDid(), newDid, newVerkey, /*"{\"alias\":\"b\"}"*/ null, null).get();
+				String nymRequest = Ledger.buildNymRequest(this.getTrustAnchorDid(), indyDid, indyVerkey, /*"{\"alias\":\"b\"}"*/ null, null).get();
 				if (log.isDebugEnabled()) log.debug("nymRequest: " + nymRequest);
 
 				// agree
@@ -242,7 +242,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 						// create ATTRIB request
 
 						if (log.isDebugEnabled()) log.debug("=== CREATE ATTRIB REQUEST ===");
-						String attribRequest = Ledger.buildAttribRequest(newDid, newDid, null, jsonObjectString, null).get();
+						String attribRequest = Ledger.buildAttribRequest(indyDid, indyDid, null, jsonObjectString, null).get();
 						if (log.isDebugEnabled()) log.debug("attribRequest: " + attribRequest);
 
 						// agree
@@ -256,7 +256,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 						// sign and submit request to ledger
 
 						if (log.isDebugEnabled()) log.debug("=== SUBMIT 2 ===");
-						String submitRequestResult2 = Ledger.signAndSubmitRequest(pool, walletUser, newDid, attribRequest).get();
+						String submitRequestResult2 = Ledger.signAndSubmitRequest(pool, walletUser, indyDid, attribRequest).get();
 						if (log.isDebugEnabled()) log.debug("SubmitRequestResult2: " + submitRequestResult2);
 					}
 				}
@@ -266,11 +266,11 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 			throw new RegistrationException("Problem connecting to Indy: " + ex.getMessage(), ex);
 		}
 
-		// REGISTRATION STATE FINISHED: IDENTIFIER
+		// REGISTRATION STATE FINISHED: DID
 
-		String identifier = "did:sov:";
-		if (network != null && ! network.isEmpty() && ! network.equals("_")) identifier += network + ":";
-		identifier += newDid;
+		String did = "did:sov:";
+		if (network != null && ! network.isEmpty() && ! network.equals("_")) did += network + ":";
+		did += indyDid;
 
 		// REGISTRATION STATE FINISHED: SECRET
 
@@ -280,11 +280,11 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		byte[] publicKeyBytes = publicKeyBytesBuffer;
 		byte[] privateKeyBytes = privateKeyBytesBuffer;
 		byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
-		String did = Base58.encode(didBytes);
-		String keyUrl = identifierToKeyUrl(identifier);
+		String base58EncodedPublicKey = Base58.encode(didBytes);
+		String keyUrl = identifierToKeyUrl(did);
 		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes, keyUrl);
 
-		if (! did.equals(newDid)) throw new RegistrationException("Generated DID does not match created DID: " + did + " != " + newDid);
+		if (! base58EncodedPublicKey.equals(indyDid)) throw new RegistrationException("Encoded public key does not match created DID: " + base58EncodedPublicKey + " != " + indyDid);
 
 		List<Map<String, Object>> jsonKeys = new ArrayList<>();
 		jsonKeys.add(jsonWebKey.toMap());
@@ -303,7 +303,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		// done
 
 		CreateState createState = CreateState.build();
-		SetCreateStateFinished.setStateFinished(createState, identifier, secret);
+		SetCreateStateFinished.setStateFinished(createState, did, secret);
 		createState.setDidDocumentMetadata(didDocumentMetadata);
 
 		return createState;
