@@ -29,7 +29,7 @@ USER jetty
 # variables
 
 ENV uniregistrar_driver_did_sov_libIndyPath=
-ENV uniregistrar_driver_did_sov_poolConfigs=_;./sovrin/mainnet.txn;staging;./sovrin/stagingnet.txn;builder;./sovrin/buildernet.txn;danube;./sovrin/danube.txn
+ENV uniregistrar_driver_did_sov_poolConfigs=_;./sovrin/_.txn;staging;./sovrin/staging.txn;builder;./sovrin/builder.txn;danube;./sovrin/danube.txn
 ENV uniregistrar_driver_did_sov_poolVersions=_;2;staging;2;builder;2;danube;2
 ENV uniregistrar_driver_did_sov_walletName=default
 ENV uniregistrar_driver_did_sov_trustAnchorSeed=
