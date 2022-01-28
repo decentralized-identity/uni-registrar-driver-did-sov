@@ -1,20 +1,11 @@
 package uniregistrar.driver.did.sov;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
+import com.danubetech.keyformats.PrivateKey_to_JWK;
 import com.danubetech.keyformats.jose.JWK;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
+import io.leonard.Base58;
 import org.abstractj.kalium.NaCl;
 import org.abstractj.kalium.NaCl.Sodium;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -33,20 +24,22 @@ import org.hyperledger.indy.sdk.wallet.Wallet;
 import org.hyperledger.indy.sdk.wallet.WalletExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.danubetech.keyformats.PrivateKey_to_JWK;
-
-import io.leonard.Base58;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.AbstractDriver;
 import uniregistrar.driver.Driver;
-import uniregistrar.request.DeactivateRequest;
 import uniregistrar.request.CreateRequest;
+import uniregistrar.request.DeactivateRequest;
 import uniregistrar.request.UpdateRequest;
-import uniregistrar.state.DeactivateState;
 import uniregistrar.state.CreateState;
-import uniregistrar.state.SetCreateStateFinished;
+import uniregistrar.state.DeactivateState;
+import uniregistrar.state.SetStateFinished;
 import uniregistrar.state.UpdateState;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 public class DidSovDriver extends AbstractDriver implements Driver {
 
@@ -303,7 +296,7 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		// done
 
 		CreateState createState = CreateState.build();
-		SetCreateStateFinished.setStateFinished(createState, did, secret);
+		SetStateFinished.setStateFinished(createState, did, secret);
 		createState.setDidDocumentMetadata(didDocumentMetadata);
 
 		return createState;

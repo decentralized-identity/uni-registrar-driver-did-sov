@@ -1,7 +1,7 @@
 package uniregistrar.driver.did.sov.state;
 
 import uniregistrar.state.CreateState;
-import uniregistrar.state.SetCreateStateAction;
+import uniregistrar.state.SetStateAction;
 
 public class SetCreateStateActionTrustAnchor {
 
@@ -11,7 +11,7 @@ public class SetCreateStateActionTrustAnchor {
 
 	public static boolean isStateActionTrustAnchor(CreateState createState) {
 
-		return "trustanchor".equals(SetCreateStateAction.getStateAction(createState));
+		return "trustanchor".equals(SetStateAction.getStateAction(createState));
 	}
 
 	public static String getStateActionTrustAnchorDid(CreateState createState) {
@@ -34,7 +34,7 @@ public class SetCreateStateActionTrustAnchor {
 
 	public static void setStateActionTrustAnchor(CreateState createState, String did, String verkey, String url) {
 
-		SetCreateStateAction.setStateAction(createState, "trustanchor");
+		SetStateAction.setStateAction(createState, "trustanchor");
 		createState.getDidState().put("did", did);
 		createState.getDidState().put("verkey", verkey);
 		createState.getDidState().put("url", url);
