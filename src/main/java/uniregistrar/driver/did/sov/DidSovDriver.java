@@ -1,45 +1,25 @@
 package uniregistrar.driver.did.sov;
 
-import com.danubetech.keyformats.PrivateKey_to_JWK;
-import com.danubetech.keyformats.jose.JWK;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import foundation.identity.did.DIDDocument;
-import foundation.identity.did.Service;
-import io.leonard.Base58;
-import org.abstractj.kalium.NaCl;
-import org.abstractj.kalium.NaCl.Sodium;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.hyperledger.indy.sdk.IndyException;
-import org.hyperledger.indy.sdk.LibIndy;
-import org.hyperledger.indy.sdk.did.Did;
-import org.hyperledger.indy.sdk.did.DidAlreadyExistsException;
-import org.hyperledger.indy.sdk.did.DidJSONParameters.CreateAndStoreMyDidJSONParameter;
-import org.hyperledger.indy.sdk.did.DidResults.CreateAndStoreMyDidResult;
-import org.hyperledger.indy.sdk.ledger.Ledger;
-import org.hyperledger.indy.sdk.pool.Pool;
-import org.hyperledger.indy.sdk.pool.PoolJSONParameters.CreatePoolLedgerConfigJSONParameter;
-import org.hyperledger.indy.sdk.pool.PoolJSONParameters.OpenPoolLedgerJSONParameter;
-import org.hyperledger.indy.sdk.pool.PoolLedgerConfigExistsException;
-import org.hyperledger.indy.sdk.wallet.Wallet;
-import org.hyperledger.indy.sdk.wallet.WalletExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.AbstractDriver;
 import uniregistrar.driver.Driver;
+import uniregistrar.driver.did.sov.libindy.IndyConnection;
+import uniregistrar.driver.did.sov.libindy.IndyConnectionException;
+import uniregistrar.driver.did.sov.libindy.IndyConnector;
+import uniregistrar.driver.did.sov.libindy.LibIndyInitializer;
+import uniregistrar.driver.did.sov.mode.internal.Create;
 import uniregistrar.request.CreateRequest;
 import uniregistrar.request.DeactivateRequest;
 import uniregistrar.request.UpdateRequest;
 import uniregistrar.state.CreateState;
 import uniregistrar.state.DeactivateState;
-import uniregistrar.state.SetStateFinished;
 import uniregistrar.state.UpdateState;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DidSovDriver extends AbstractDriver implements Driver {
 
@@ -47,22 +27,8 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 	private Map<String, Object> properties;
 
-	private String libIndyPath;
-	private String poolConfigs;
-	private String poolVersions;
-	private String walletName;
-	private String trustAnchorSeed;
-
-	private Map<String, Pool> poolMap = null;
-	private Map<String, Integer> poolVersionMap = null;
-	private Map<String, String> poolTaaMap = null;
-	private Wallet wallet = null;
-	private String trustAnchorDid = null;
-
-	static {
-
-		NaCl.init();
-	}
+	private LibIndyInitializer libIndyInitializer;
+	private IndyConnector indyConnector;
 
 	public DidSovDriver(Map<String, Object> properties) {
 
@@ -78,21 +44,23 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 
 		if (log.isDebugEnabled()) log.debug("Loading from environment: " + System.getenv());
 
-		Map<String, Object> properties = new HashMap<String, Object> ();
+		Map<String, Object> properties = new HashMap<> ();
 
 		try {
 
 			String env_libIndyPath = System.getenv("uniregistrar_driver_did_sov_libIndyPath");
 			String env_poolConfigs = System.getenv("uniregistrar_driver_did_sov_poolConfigs");
 			String env_poolVersions = System.getenv("uniregistrar_driver_did_sov_poolVersions");
-			String env_walletName = System.getenv("uniregistrar_driver_did_sov_walletName");
-			String env_trustAnchorSeed = System.getenv("uniregistrar_driver_did_sov_trustAnchorSeed");
+			String env_walletNames = System.getenv("uniregistrar_driver_did_sov_walletNames");
+			String env_submitterDidSeeds = System.getenv("uniregistrar_driver_did_sov_submitterDidSeeds");
+			String env_genesisTimestamps = System.getenv("uniregistrar_driver_did_sov_genesisTimestamps");
 
 			if (env_libIndyPath != null) properties.put("libIndyPath", env_libIndyPath);
 			if (env_poolConfigs != null) properties.put("poolConfigs", env_poolConfigs);
 			if (env_poolVersions != null) properties.put("poolVersions", env_poolVersions);
-			if (env_walletName != null) properties.put("walletName", env_walletName);
-			if (env_trustAnchorSeed != null) properties.put("trustAnchorSeed", env_trustAnchorSeed);
+			if (env_walletNames != null) properties.put("walletNames", env_walletNames);
+			if (env_submitterDidSeeds != null) properties.put("submitterDidSeeds", env_submitterDidSeeds);
+			if (env_genesisTimestamps != null) properties.put("genesisTimestamps", env_genesisTimestamps);
 		} catch (Exception ex) {
 
 			throw new IllegalArgumentException(ex.getMessage(), ex);
@@ -108,16 +76,22 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		try {
 
 			String prop_libIndyPath = (String) this.getProperties().get("libIndyPath");
+
+			this.setLibIndyInitializer(new LibIndyInitializer(
+					prop_libIndyPath));
+
 			String prop_poolConfigs = (String) this.getProperties().get("poolConfigs");
 			String prop_poolVersions = (String) this.getProperties().get("poolVersions");
-			String prop_walletName = (String) this.getProperties().get("walletName");
-			String prop_trustAnchorSeed = (String) this.getProperties().get("trustAnchorSeed");
+			String prop_walletNames = (String) this.getProperties().get("walletNames");
+			String prop_submitterDidSeeds = (String) this.getProperties().get("submitterDidSeeds");
+			String prop_genesisTimestamps = (String) this.getProperties().get("genesisTimestamps");
 
-			if (prop_libIndyPath != null) this.setLibIndyPath(prop_libIndyPath);
-			if (prop_poolConfigs != null) this.setPoolConfigs(prop_poolConfigs);
-			if (prop_poolVersions != null) this.setPoolVersions(prop_poolVersions);
-			if (prop_walletName != null) this.setWalletName(prop_walletName);
-			if (prop_trustAnchorSeed != null) this.setTrustAnchorSeed(prop_trustAnchorSeed);
+			this.setIndyConnector(new IndyConnector(
+					prop_poolConfigs,
+					prop_poolVersions,
+					prop_walletNames,
+					prop_submitterDidSeeds,
+					prop_genesisTimestamps));
 		} catch (Exception ex) {
 
 			throw new IllegalArgumentException(ex.getMessage(), ex);
@@ -127,189 +101,53 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 	@Override
 	public CreateState create(CreateRequest createRequest) throws RegistrationException {
 
-		// open pool and wallet
+		// init
 
-		synchronized (this) {
-
-			if (this.getPoolMap() == null || this.getWallet() == null || this.getTrustAnchorDid() == null) this.openIndy();
+		if (!this.getLibIndyInitializer().isInitialized()) {
+			this.getLibIndyInitializer().initializeLibIndy();
+			if (log.isInfoEnabled()) log.info("Successfully initialized libindy.");
 		}
 
-		// read options
+		// open indy connections
+
+		if (!this.getIndyConnector().isOpened()) {
+			try {
+				this.getIndyConnector().openIndyConnections(true, true);
+				if (log.isInfoEnabled()) log.info("Successfully opened Indy connections.");
+			} catch (IndyConnectionException ex) {
+				throw new RegistrationException("Cannot open Indy connections: " + ex.getMessage(), ex);
+			}
+		}
+
+		// read options, secret, didDocument, jobId
 
 		String network = createRequest.getOptions() == null ? null : (String) createRequest.getOptions().get("network");
 		if (network == null || network.trim().isEmpty()) network = "_";
 
-		// read secret
-
 		String seed = createRequest.getSecret() == null ? null : (String) createRequest.getSecret().get("seed");
 
-		// find pool and version and taa
+		DIDDocument didDocument = createRequest.getDidDocument();
 
-		Pool pool = this.getPoolMap().get(network);
-		if (pool == null) throw new RegistrationException("Unknown network: " + network);
+		String jobId = createRequest.getJobId();
 
-		Integer poolVersion = this.getPoolVersionMap().get(network);
+		// find Indy connection
 
-		String taa = this.getPoolTaaMap().get(network);
-
-		// create USER SEED
-
-		String newSeed = seed != null ? seed : RandomStringUtils.randomAlphanumeric(32);
+		IndyConnection indyConnection = this.getIndyConnector().getIndyConnections().get(network);
+		if (indyConnection == null) throw new RegistrationException("Unknown network: " + network);
 
 		// create
 
-		String indyDid;
-		String indyVerkey;
-
-		try {
-
-			synchronized (this) {
-
-				Pool.setProtocolVersion(poolVersion);
-
-				// create USER DID
-
-				Wallet walletUser = this.getWallet();
-
-				if (log.isDebugEnabled()) log.debug("=== CREATE NYM REQUEST ===");
-				CreateAndStoreMyDidJSONParameter createAndStoreMyDidJSONParameter = new CreateAndStoreMyDidJSONParameter(null, newSeed, null, null);
-				if (log.isDebugEnabled()) log.debug("CreateAndStoreMyDidJSONParameter: " + createAndStoreMyDidJSONParameter);
-				CreateAndStoreMyDidResult createAndStoreMyDidResult = Did.createAndStoreMyDid(walletUser, createAndStoreMyDidJSONParameter.toJson()).get();
-				if (log.isDebugEnabled()) log.debug("CreateAndStoreMyDidResult: " + createAndStoreMyDidResult);
-
-				indyDid = createAndStoreMyDidResult.getDid();
-				indyVerkey = createAndStoreMyDidResult.getVerkey();
-
-				// create NYM request
-
-				if (log.isDebugEnabled()) log.debug("=== CREATE NYM REQUEST ===");
-				String nymRequest = Ledger.buildNymRequest(this.getTrustAnchorDid(), indyDid, indyVerkey, /*"{\"alias\":\"b\"}"*/ null, null).get();
-				if (log.isDebugEnabled()) log.debug("nymRequest: " + nymRequest);
-
-				// agree
-
-				if (taa != null) {
-
-					nymRequest = Taa.agree(nymRequest, taa);
-					if (log.isDebugEnabled()) log.debug("agreed nymRequest: " + nymRequest);
-				}
-
-				// sign and submit request to ledger
-
-				if (log.isDebugEnabled()) log.debug("=== SUBMIT 1 ===");
-				String submitRequestResult1 = Ledger.signAndSubmitRequest(pool, this.getWallet(), this.getTrustAnchorDid(), nymRequest).get();
-				if (log.isDebugEnabled()) log.debug("SubmitRequestResult1: " + submitRequestResult1);
-
-				// service endpoints
-
-				if (createRequest.getDidDocument() != null) {
-
-					DIDDocument didDocument = createRequest.getDidDocument();
-
-					if (didDocument.getServices() != null) {
-
-						Map<String, Object> jsonObject = new HashMap<String, Object> ();
-						Map<String, Object> endpointJsonObject = new HashMap<String, Object> ();
-
-						for (Service service : didDocument.getServices()) {
-
-							endpointJsonObject.put(service.getType(), service.getServiceEndpoint());
-						}
-
-						jsonObject.put("endpoint", endpointJsonObject);
-
-						String jsonObjectString;
-
-						try {
-
-							StringWriter stringWriter = new StringWriter();
-							new ObjectMapper().writeValue(stringWriter, jsonObject);
-							jsonObjectString = stringWriter.toString();
-						} catch (IOException ex) {
-
-							throw new RegistrationException("Invalid endpoints: " + endpointJsonObject);
-						}
-
-						if (log.isDebugEnabled()) log.debug("Raw: " + jsonObjectString);
-
-						// create ATTRIB request
-
-						if (log.isDebugEnabled()) log.debug("=== CREATE ATTRIB REQUEST ===");
-						String attribRequest = Ledger.buildAttribRequest(indyDid, indyDid, null, jsonObjectString, null).get();
-						if (log.isDebugEnabled()) log.debug("attribRequest: " + attribRequest);
-
-						// agree
-
-						if (taa != null) {
-
-							attribRequest = Taa.agree(attribRequest, taa);
-							if (log.isDebugEnabled()) log.debug("agreed attribRequest: " + attribRequest);
-						}
-
-						// sign and submit request to ledger
-
-						if (log.isDebugEnabled()) log.debug("=== SUBMIT 2 ===");
-						String submitRequestResult2 = Ledger.signAndSubmitRequest(pool, walletUser, indyDid, attribRequest).get();
-						if (log.isDebugEnabled()) log.debug("SubmitRequestResult2: " + submitRequestResult2);
-					}
-				}
-			}
-		} catch (InterruptedException | ExecutionException | IndyException ex) {
-
-			throw new RegistrationException("Problem connecting to Indy: " + ex.getMessage(), ex);
-		}
-
-		// REGISTRATION STATE FINISHED: DID
-
-		String did = "did:sov:";
-		if (network != null && ! network.isEmpty() && ! network.equals("_")) did += network + ":";
-		did += indyDid;
-
-		// REGISTRATION STATE FINISHED: SECRET
-
-		byte[] publicKeyBytesBuffer = new byte[Sodium.CRYPTO_SIGN_ED25519_PUBLICKEYBYTES];
-		byte[] privateKeyBytesBuffer = new byte[Sodium.CRYPTO_SIGN_ED25519_SECRETKEYBYTES];
-		NaCl.sodium().crypto_sign_ed25519_seed_keypair(publicKeyBytesBuffer, privateKeyBytesBuffer, newSeed.getBytes());
-		byte[] publicKeyBytes = publicKeyBytesBuffer;
-		byte[] privateKeyBytes = privateKeyBytesBuffer;
-		byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
-		String base58EncodedPublicKey = Base58.encode(didBytes);
-		String keyUrl = identifierToKeyUrl(did);
-		JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes, keyUrl);
-
-		if (! base58EncodedPublicKey.equals(indyDid)) throw new RegistrationException("Encoded public key does not match created DID: " + base58EncodedPublicKey + " != " + indyDid);
-
-		List<Map<String, Object>> jsonKeys = new ArrayList<>();
-		jsonKeys.add(jsonWebKey.toMap());
-
-		Map<String, Object> secret = new LinkedHashMap<>();
-		secret.put("seed", newSeed);
-		secret.put("keys", jsonKeys);
-
-		// REGISTRATION STATE FINISHED: DID DOCUMENT METADATA
-
-		Map<String, Object> didDocumentMetadata = new LinkedHashMap<>();
-		didDocumentMetadata.put("network", network);
-		didDocumentMetadata.put("poolVersion", poolVersion);
-		didDocumentMetadata.put("submitterDid", this.getTrustAnchorDid());
-
-		// done
-
-		CreateState createState = CreateState.build();
-		SetStateFinished.setStateFinished(createState, did, secret);
-		createState.setDidDocumentMetadata(didDocumentMetadata);
-
-		return createState;
+		return Create.create(indyConnection, seed, didDocument);
 	}
 
 	@Override
 	public UpdateState update(UpdateRequest updateRequest) throws RegistrationException {
-		throw new RuntimeException("Not implemented.");
+		throw new RegistrationException("Not implemented.");
 	}
 
 	@Override
 	public DeactivateState deactivate(DeactivateRequest deactivateRequest) throws RegistrationException {
-		throw new RuntimeException("Not implemented.");
+		throw new RegistrationException("Not implemented.");
 	}
 
 	@Override
@@ -321,308 +159,32 @@ public class DidSovDriver extends AbstractDriver implements Driver {
 		return properties;
 	}
 
-	private void openIndy() throws RegistrationException {
-
-		// initialize libindy
-
-		if ((! LibIndy.isInitialized()) && this.getLibIndyPath() != null) {
-
-			if (log.isInfoEnabled()) log.info("Initializing libindy: " + this.getLibIndyPath() + " (" + new File(this.getLibIndyPath()).getAbsolutePath() + ")");
-			LibIndy.init(this.getLibIndyPath());
-		}
-
-		// parse pool configs
-
-		String[] poolConfigs = this.getPoolConfigs().split(";");
-		Map<String, String> poolConfigMap = new HashMap<String, String> ();
-
-		for (int i=0; i<poolConfigs.length; i+=2) {
-
-			String poolConfigName = poolConfigs[i];
-			String poolConfigFile = poolConfigs[i+1];
-
-			poolConfigMap.put(poolConfigName, poolConfigFile);
-		}
-
-		if (poolConfigMap.size() < 1) {
-
-			throw new RegistrationException("Please provide pool configs for the did:sov: driver.");
-		}
-
-		if (log.isInfoEnabled()) log.info("Pool config map: " + poolConfigMap);
-
-		// parse pool versions
-
-		String[] poolVersions = this.getPoolVersions().split(";");
-		this.poolVersionMap = new HashMap<String, Integer> ();
-
-		for (int i=0; i<poolVersions.length; i+=2) {
-
-			String poolConfigName = poolVersions[i];
-			Integer poolConfigVersion = Integer.parseInt(poolVersions[i+1]);
-
-			this.poolVersionMap.put(poolConfigName, poolConfigVersion);
-		}
-
-		if (this.poolVersionMap.size() < 1) {
-
-			throw new RegistrationException("Please provide pool versions for the did:sov: driver.");
-		}
-
-		if (log.isInfoEnabled()) log.info("Pool version map: " + this.poolVersionMap);
-
-		// check trust anchor seed
-
-		String trustAnchorSeed = this.getTrustAnchorSeed();
-
-		if (trustAnchorSeed == null || trustAnchorSeed.trim().isEmpty()) {
-
-			throw new RegistrationException("Please provide a trust anchor seed for the did:sov: driver.");
-		}
-
-		// create pool configs
-
-		for (Map.Entry<String, String> poolConfig : poolConfigMap.entrySet()) {
-
-			String poolConfigName = poolConfig.getKey();
-			String poolConfigFile = poolConfig.getValue();
-
-			try {
-
-				CreatePoolLedgerConfigJSONParameter createPoolLedgerConfigJSONParameter = new CreatePoolLedgerConfigJSONParameter(poolConfigFile);
-				Pool.createPoolLedgerConfig(poolConfigName, createPoolLedgerConfigJSONParameter.toJson()).get();
-				if (log.isInfoEnabled()) log.info("Pool config \"" + poolConfigName + "\" successfully created.");
-			} catch (IndyException | InterruptedException | ExecutionException ex) {
-
-				IndyException iex = null;
-				if (ex instanceof IndyException) iex = (IndyException) ex;
-				if (ex instanceof ExecutionException && ex.getCause() instanceof IndyException) iex = (IndyException) ex.getCause();
-				if (iex instanceof PoolLedgerConfigExistsException) {
-
-					if (log.isInfoEnabled()) log.info("Pool config \"" + poolConfigName + "\" has already been created.");
-				} else {
-
-					throw new RegistrationException("Cannot create pool config \"" + poolConfigName + "\": " + ex.getMessage(), ex);
-				}
-			}
-		}
-
-		// create wallet
-
-		try {
-
-			String walletConfig = "{ \"id\":\"" + this.getWalletName() + "\", \"storage_type\":\"" + "default" + "\"}";
-			String walletCredentials = "{ \"key\":\"key\" }";
-			Wallet.createWallet(walletConfig, walletCredentials).get();
-			if (log.isInfoEnabled()) log.info("Wallet \"" + this.getWalletName() + "\" successfully created.");
-		} catch (IndyException | InterruptedException | ExecutionException ex) {
-
-			IndyException iex = null;
-			if (ex instanceof IndyException) iex = (IndyException) ex;
-			if (ex instanceof ExecutionException && ex.getCause() instanceof IndyException) iex = (IndyException) ex.getCause();
-			if (iex instanceof WalletExistsException) {
-
-				if (log.isInfoEnabled()) log.info("Wallet \"" + this.getWalletName() + "\" has already been created.");
-			} else {
-
-				throw new RegistrationException("Cannot create wallet \"" + this.getWalletName() + "\": " + ex.getMessage(), ex);
-			}
-		}
-
-		// open wallet
-
-		try {
-
-			String walletConfig = "{ \"id\":\"" + this.getWalletName() + "\", \"storage_type\":\"" + "default" + "\"}";
-			String walletCredentials = "{ \"key\":\"key\" }";
-			this.wallet = Wallet.openWallet(walletConfig, walletCredentials).get();
-		} catch (IndyException | InterruptedException | ExecutionException ex) {
-
-			throw new RegistrationException("Cannot open wallet \"" + this.getWalletName() + "\": " + ex.getMessage(), ex);
-		}
-
-		if (log.isInfoEnabled()) log.info("Opened wallet: " + this.wallet);
-
-		// create trust anchor DID
-
-		try {
-
-			CreateAndStoreMyDidJSONParameter createAndStoreMyDidJSONParameterTrustee = new CreateAndStoreMyDidJSONParameter(null, trustAnchorSeed, null, null);
-			CreateAndStoreMyDidResult createAndStoreMyDidResultTrustee = Did.createAndStoreMyDid(this.getWallet(), createAndStoreMyDidJSONParameterTrustee.toJson()).get();
-			this.trustAnchorDid = createAndStoreMyDidResultTrustee.getDid();
-		} catch (IndyException | InterruptedException | ExecutionException ex) {
-
-			IndyException iex = null;
-			if (ex instanceof IndyException) iex = (IndyException) ex;
-			if (ex instanceof ExecutionException && ex.getCause() instanceof IndyException) iex = (IndyException) ex.getCause();
-			if (iex instanceof DidAlreadyExistsException) {
-
-				if (log.isInfoEnabled()) log.info("Trust anchor DID has already been created.");
-			} else {
-
-				throw new RegistrationException("Cannot create trust anchor DID: " + ex.getMessage(), ex);
-			}
-		}
-
-		if (log.isInfoEnabled()) log.info("Trust anchor DID: " + this.trustAnchorDid);
-
-		// open pools
-
-		this.poolMap = new HashMap<String, Pool> ();
-		this.poolTaaMap = new HashMap<String, String> ();
-
-		for (String poolConfigName : poolConfigMap.keySet()) {
-
-			try {
-
-				Pool.setProtocolVersion(this.getPoolVersionMap().get(poolConfigName));
-
-				OpenPoolLedgerJSONParameter openPoolLedgerJSONParameter = new OpenPoolLedgerJSONParameter(null, null);
-				Pool pool = Pool.openPoolLedger(poolConfigName, openPoolLedgerJSONParameter.toJson()).get();
-
-				String taa = Taa.getTaa(pool, this.getWallet(), this.getTrustAnchorDid());
-
-				this.poolMap.put(poolConfigName, pool);
-				if (taa != null) this.poolTaaMap.put(poolConfigName, taa);
-			} catch (IndyException | InterruptedException | ExecutionException ex) {
-
-				if (log.isWarnEnabled()) log.warn("Cannot open pool \"" + poolConfigName + "\": " + ex.getMessage(), ex);
-				continue;
-			}
-		}
-
-		if (log.isInfoEnabled()) log.info("Opened " + this.poolMap.size() + " pools: " + this.poolMap.keySet());
-	}
-
-	/*
-	 * Helper methods
-	 */
-
-	private static JWK privateKeyToJWK(byte[] privateKeyBytes, byte[] publicKeyBytes, String keyUrl) {
-
-		String kid = keyUrl;
-		String use = null;
-
-		return PrivateKey_to_JWK.Ed25519PrivateKeyBytes_to_JWK(privateKeyBytes, publicKeyBytes, kid, use);
-	}
-
-	private static String identifierToKeyUrl(String identifier) {
-
-		return identifier + "#key-1";
-	}
-
 	/*
 	 * Getters and setters
 	 */
 
 	public Map<String, Object> getProperties() {
-
-		return this.properties;
+		return properties;
 	}
 
 	public void setProperties(Map<String, Object> properties) {
-
 		this.properties = properties;
 		this.configureFromProperties();
 	}
 
-	public String getLibIndyPath() {
-
-		return this.libIndyPath;
+	public LibIndyInitializer getLibIndyInitializer() {
+		return libIndyInitializer;
 	}
 
-	public void setLibIndyPath(String libIndyPath) {
-
-		this.libIndyPath = libIndyPath;
+	public void setLibIndyInitializer(LibIndyInitializer libIndyInitializer) {
+		this.libIndyInitializer = libIndyInitializer;
 	}
 
-	public String getPoolConfigs() {
-
-		return this.poolConfigs;
+	public IndyConnector getIndyConnector() {
+		return indyConnector;
 	}
 
-	public void setPoolConfigs(String poolConfigs) {
-
-		this.poolConfigs = poolConfigs;
-	}
-
-	public String getPoolVersions() {
-
-		return this.poolVersions;
-	}
-
-	public void setPoolVersions(String poolVersions) {
-
-		this.poolVersions = poolVersions;
-	}
-
-	public String getWalletName() {
-
-		return this.walletName;
-	}
-
-	public void setWalletName(String walletName) {
-
-		this.walletName = walletName;
-	}
-
-	public String getTrustAnchorSeed() {
-
-		return this.trustAnchorSeed;
-	}
-
-	public void setTrustAnchorSeed(String trustAnchorSeed) {
-
-		this.trustAnchorSeed = trustAnchorSeed;
-	}
-
-	public Map<String, Pool> getPoolMap() {
-
-		return this.poolMap;
-	}
-
-	public void setPoolMap(Map<String, Pool> poolMap) {
-
-		this.poolMap = poolMap;
-	}
-
-	public Map<String, Integer> getPoolVersionMap() {
-
-		return this.poolVersionMap;
-	}
-
-	public void setPoolVersionMap(Map<String, Integer> poolVersionMap) {
-
-		this.poolVersionMap = poolVersionMap;
-	}
-
-	public Map<String, String> getPoolTaaMap() {
-
-		return this.poolTaaMap;
-	}
-
-	public void setPoolTaaMap(Map<String, String> poolTaaMap) {
-
-		this.poolTaaMap = poolTaaMap;
-	}
-
-	public Wallet getWallet() {
-
-		return this.wallet;
-	}
-
-	public void setWallet(Wallet wallet) {
-
-		this.wallet = wallet;
-	}
-
-	public String getTrustAnchorDid() {
-
-		return this.trustAnchorDid;
-	}
-
-	public void setTrustAnchorDid(String trustAnchorDid) {
-
-		this.trustAnchorDid = trustAnchorDid;
+	public void setIndyConnector(IndyConnector indyConnector) {
+		this.indyConnector = indyConnector;
 	}
 }

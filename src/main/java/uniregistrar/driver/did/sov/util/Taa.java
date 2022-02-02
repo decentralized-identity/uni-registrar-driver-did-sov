@@ -1,4 +1,4 @@
-package uniregistrar.driver.did.sov;
+package uniregistrar.driver.did.sov.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,21 +18,6 @@ import org.slf4j.LoggerFactory;
 public class Taa {
 
 	private static Logger log = LoggerFactory.getLogger(Taa.class);
-
-	public static String getTaa(Pool pool, Wallet wallet, String submitterDid) throws InterruptedException, ExecutionException, IndyException {
-
-		String getTxnAuthorAgreementRequest = Ledger.buildGetTxnAuthorAgreementRequest(submitterDid, null).get();
-		String getTxnAuthorAgreementResult = Ledger.signAndSubmitRequest(pool, wallet, submitterDid, getTxnAuthorAgreementRequest).get();
-		if (log.isDebugEnabled()) log.debug("getTxnAuthorAgreementResult: (" + getTxnAuthorAgreementResult.length() + ") " + getTxnAuthorAgreementResult);
-
-		JSONObject jsonObjectTAA = new JSONObject(getTxnAuthorAgreementResult);
-		JSONObject jsonObjectTAAResult = (jsonObjectTAA.has("result") && jsonObjectTAA.get("result") instanceof JSONObject) ? jsonObjectTAA.getJSONObject("result") : null;
-		JSONObject jsonObjectTAAResultData = (jsonObjectTAAResult != null && jsonObjectTAAResult.has("data") && jsonObjectTAAResult.get("data") instanceof JSONObject) ? jsonObjectTAAResult.getJSONObject("data") : null;
-		String taa = jsonObjectTAAResultData == null ? null : jsonObjectTAAResultData.getString("text");
-		if (log.isDebugEnabled() && taa != null) log.debug("taa: (" + taa.length() + ") " + taa);
-
-		return taa;
-	}
 
 	private static final String taa;
 
