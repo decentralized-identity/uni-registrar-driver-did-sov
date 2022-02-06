@@ -5,6 +5,8 @@ import com.danubetech.keyformats.jose.JWK;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
+import foundation.identity.did.VerificationMethod;
+import foundation.identity.jsonld.JsonLDUtils;
 import io.leonard.Base58;
 import org.abstractj.kalium.NaCl;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -26,6 +28,7 @@ import uniregistrar.state.SetStateFinished;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -164,18 +167,27 @@ public class Create {
         byte[] publicKeyBytes = publicKeyBytesBuffer;
         byte[] privateKeyBytes = privateKeyBytesBuffer;
         byte[] didBytes = Arrays.copyOf(publicKeyBytes, 16);
-        String base58EncodedPublicKey = Base58.encode(didBytes);
+        String base58EncodedDidBytes = Base58.encode(didBytes);
         String keyUrl = identifierToKeyUrl(did);
         JWK jsonWebKey = privateKeyToJWK(privateKeyBytes, publicKeyBytes, keyUrl);
 
-        if (! base58EncodedPublicKey.equals(indyDid)) throw new RegistrationException("Encoded public key does not match created DID: " + base58EncodedPublicKey + " != " + indyDid);
+        if (! base58EncodedDidBytes.equals(indyDid)) throw new RegistrationException("Encoded public key does not match created DID: " + base58EncodedDidBytes + " != " + indyDid);
 
-        List<Map<String, Object>> jsonKeys = new ArrayList<>();
-        jsonKeys.add(jsonWebKey.toMap());
+        VerificationMethod verificationMethod = VerificationMethod.builder()
+                .id(URI.create(did + "#key-1"))
+                .controller(did)
+                .type("Ed25519VerificationKey2018")
+                .build();
+
+        JsonLDUtils.jsonLdAdd(verificationMethod, "privateKeyJwk", jsonWebKey.toMap());
+        JsonLDUtils.jsonLdAdd(verificationMethod, "purpose", List.of( "authentication", "assertionMethod", "capabilityInvocation", "capabilityDelegation"));
+
+        List<Map<String, Object>> jsonVerificationMethods = new ArrayList<>();
+        jsonVerificationMethods.add(verificationMethod.getJsonObject());
 
         Map<String, Object> secret = new LinkedHashMap<>();
         secret.put("seed", newSeed);
-        secret.put("keys", jsonKeys);
+        secret.put("verificationMethod", jsonVerificationMethods);
 
         // REGISTRATION STATE FINISHED: DID DOCUMENT METADATA
 
