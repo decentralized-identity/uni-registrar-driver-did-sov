@@ -30,9 +30,14 @@
 	</repositories>
 
 	<properties>
-		<org.hyperledger.indy.version>1.16.0</org.hyperledger.indy.version>
-		<org.abstractj.kalium.kalium.version>0.8.0</org.abstractj.kalium.kalium.version>
-		<io.leonard.base58.version>0.0.2</io.leonard.base58.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>11</java.version>
+
+		<!-- Dependency Versions -->
+
+		<libindy-common-java.version>0.1-SNAPSHOT</libindy-common-java.version>
+		<io.leonard-base58.version>0.0.2</io.leonard-base58.version>
+		<com.goterl-lazysodium-java.version>5.1.1</com.goterl-lazysodium-java.version>
 	</properties>
 
 	<profiles>
@@ -118,6 +123,31 @@
 		</profile>
 	</profiles>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.danubetech</groupId>
+				<artifactId>libindy-common-java</artifactId>
+				<version>${libindy-common-java.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.code.gson</groupId>
+				<artifactId>gson</artifactId>
+				<version>${gson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.leonard</groupId>
+				<artifactId>base58</artifactId>
+				<version>${io.leonard-base58.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.goterl</groupId>
+				<artifactId>lazysodium-java</artifactId>
+				<version>${com.goterl-lazysodium-java.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -136,22 +166,16 @@
 			<artifactId>key-formats-java</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.hyperledger</groupId>
-			<artifactId>indy</artifactId>
-			<version>${org.hyperledger.indy.version}</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.abstractj.kalium</groupId>
-			<artifactId>kalium</artifactId>
-			<version>${org.abstractj.kalium.kalium.version}</version>
-			<scope>compile</scope>
+			<groupId>com.danubetech</groupId>
+			<artifactId>libindy-common-java</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.leonard</groupId>
 			<artifactId>base58</artifactId>
-			<version>${io.leonard.base58.version}</version>
-			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.goterl</groupId>
+			<artifactId>lazysodium-java</artifactId>
 		</dependency>
 	</dependencies>
 

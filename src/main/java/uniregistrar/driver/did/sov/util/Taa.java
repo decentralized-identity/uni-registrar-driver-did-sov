@@ -1,19 +1,16 @@
 package uniregistrar.driver.did.sov.util;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.hyperledger.indy.sdk.IndyException;
 import org.hyperledger.indy.sdk.ledger.Ledger;
-import org.hyperledger.indy.sdk.pool.Pool;
-import org.hyperledger.indy.sdk.wallet.Wallet;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 public class Taa {
 

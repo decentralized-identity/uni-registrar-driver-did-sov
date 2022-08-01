@@ -1,15 +1,15 @@
 package uniregistrar.driver.did.sov;
 
+import com.danubetech.libindy.IndyConnection;
+import com.danubetech.libindy.IndyConnectionException;
+import com.danubetech.libindy.IndyConnector;
+import com.danubetech.libindy.LibIndyInitializer;
 import foundation.identity.did.DIDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
 import uniregistrar.driver.AbstractDriver;
 import uniregistrar.driver.Driver;
-import uniregistrar.driver.did.sov.libindy.IndyConnection;
-import uniregistrar.driver.did.sov.libindy.IndyConnectionException;
-import uniregistrar.driver.did.sov.libindy.IndyConnector;
-import uniregistrar.driver.did.sov.libindy.LibIndyInitializer;
 import uniregistrar.driver.did.sov.mode.internal.Create;
 import uniregistrar.request.CreateRequest;
 import uniregistrar.request.DeactivateRequest;

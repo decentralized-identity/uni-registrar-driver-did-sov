@@ -2,6 +2,7 @@ package uniregistrar.driver.did.sov.mode.internal;
 
 import com.danubetech.keyformats.PrivateKey_to_JWK;
 import com.danubetech.keyformats.jose.JWK;
+import com.danubetech.libindy.IndyConnection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.Service;
@@ -20,7 +21,6 @@ import org.hyperledger.indy.sdk.wallet.Wallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uniregistrar.RegistrationException;
-import uniregistrar.driver.did.sov.libindy.IndyConnection;
 import uniregistrar.driver.did.sov.util.Ed25519Util;
 import uniregistrar.driver.did.sov.util.Taa;
 import uniregistrar.state.CreateState;
